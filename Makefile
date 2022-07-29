@@ -6,3 +6,4 @@ setup:
 	python -m venv .venv
 	.venv/bin/python -m pip install --upgrade pip
 	.venv/bin/python -m pip install -r requirements_dev.txt
+	.venv/bin/python -m spacy download en_core_web_lg
