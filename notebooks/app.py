@@ -17,7 +17,7 @@ def read_file():
 
 df, grouper = read_file()
 
-topic = st.selectbox('select topic',('Hurricane & Tornado', 'Transportation', 'Flood', 'Industrial',
+topic = st.selectbox('Type of Disasters',('Hurricane & Tornado', 'Transportation', 'Flood', 'Industrial',
                                     'Earthquake', 'Societal', 'Wildfire', 'Biological', 'Meteor'))
 
 col1, col2 = st.columns(2, gap="medium")
@@ -40,7 +40,7 @@ if topic:
     fig = px.bar(data, x = 'year',y = 'tweets')
 
     # fig = px.scatter(data, x = 'year',y = 'tweets', size='tweets',size_max=35)
-    fig.update_layout(title=topic)
+    fig.update_layout(title=topic, height=450, width=750)
 
     col2.title("No.of Tweets for a Disaster")
     col2.plotly_chart(fig)
