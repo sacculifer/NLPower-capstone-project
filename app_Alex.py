@@ -30,7 +30,7 @@ df = df.drop(columns=['Unnamed: 0'])
 from PIL import Image
 image1 = Image.open('NLPower_logo.png')
 #image2 = Image.open('dimbat.png')
-img1, img2, img3 = st.columns(3)
+img1, img2, img3 = st.columns([2,7,2])
 with img2:
      st.image(image1, use_column_width=True)
 
@@ -447,14 +447,23 @@ st.text("")
 
 
 
-st.markdown("<h2 style='text-align: center; color: red;'>Outlook</h2>", unsafe_allow_html=True)
-st.markdown("- Running (near) real-time on twitter stream")
-st.markdown("- More refined time component (filtering/visualisation)")
-st.markdown("- Include Twitter geoinformation")
-st.markdown("- More themes for classification")
-st.markdown("- More languages")
-st.markdown("- Adding image recognition/matching functionality")
-st.markdown("- Adding other social media services")
+col1, col2, col3= st.columns(3)
+
+# with col1:
+#     st.image("dimbat.png", width=150)
+with col2:  
+    st.image("NLPower_logo.png")  
+# with col3:  
+#     st.image("NLpower.png", width=150)
+
+st.markdown("<h2 style='text-align: left; color: teal;'>Outlook</h2>", unsafe_allow_html=True)
+st.markdown("#### - Running (near) real-time on twitter stream")
+st.markdown("#### - More refined time component (filtering/visualisation)")
+st.markdown("#### - Include Twitter geoinformation")
+st.markdown("#### - More themes for classification")
+st.markdown("#### - More languages")
+st.markdown("#### - Adding image recognition/matching functionality")
+st.markdown("#### - Adding other social media services")
 
 
 st.markdown('''
