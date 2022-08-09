@@ -28,22 +28,36 @@ df = df.drop(columns=['Unnamed: 0'])
 # dashboard title
 
 from PIL import Image
-image1 = Image.open('NLpower.png')
-image2 = Image.open('dimbat.png')
-img1, img2, img3, img4 = st.columns(4)
+image1 = Image.open('NLPower_logo.png')
+#image2 = Image.open('dimbat.png')
+img1, img2, img3 = st.columns(3)
 with img2:
-    st.image(image1)
-with img3:
-    st.image(image2)
+     st.image(image1, use_column_width=True)
 
-st.markdown("<h1 style='text-align: center;'>DIsaster Management BAsed on Twitter (DiMBat)</h1>", unsafe_allow_html=True)
+# fig_tab0 = st.empty()
+# with fig_tab0:
+#     st.image(image1, width=500)
+
+
+#st.markdown("<h1 style='text-align: center;'>DIsaster Management BAsed on Twitter (DiMBat)</h1>", unsafe_allow_html=True)
+#st.text("")
 st.text("")
-st.text("")
+
+st.markdown(
+    """
+<style>
+span[data-baseweb="tag"] {
+  background-color: teal !important;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
 
 st.markdown("<h3 style='text-align: left;'>Demonstrator:</h3>", unsafe_allow_html=True)
 
 # model try-out
-text_in = st.text_input('Write something disastrous, I will classify it for you. May take a couple of seconds though ...', key='text')
+text_in = st.text_input('Write something disastrous or non-disastrous, I will classify it for you. May take a couple of seconds though ...', key='text')
 def clear_text():
     st.session_state["text"] = ""
     
@@ -52,6 +66,12 @@ st.button("IMPORTANT: Click here for clearing text input before continuing below
 if text_in:
     from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoModelForTokenClassification, pipeline
     from geopy.geocoders import Nominatim
+
+    #
+    tokenizer0 = AutoTokenizer.from_pretrained("sacculifer/dimbat_disaster_distilbert")
+    model0 = AutoModelForSequenceClassification.from_pretrained("sacculifer/dimbat_disaster_distilbert", from_tf=True)
+    dclassifier = pipeline("text-classification", tokenizer=tokenizer0, model=model0)
+    dclassification = dclassifier(text_in)
 
     #Classification (Disaster type)
     tokenizer1 = AutoTokenizer.from_pretrained("sacculifer/dimbat_disaster_type_distilbert")
@@ -74,71 +94,216 @@ if text_in:
     label_mapping = {'LABEL_1': 'Disease', 'LABEL_2': 'Earthquake', 'LABEL_3': 'Flood', 'LABEL_4': 'Hurricane & Tornado', 'LABEL_5': 'Wildfire', 'LABEL_6': 'Industrial Accident', 'LABEL_7': 'Societal Crime', 'LABEL_8': 'Transportation Accident', 'LABEL_9': 'Meteor Crash', 'LABEL_0': 'Haze'}
     label = label_mapping[classification[0]['label']]
 
-    st.write(f'This seems to be a disaster -- I think this refers to a disaster of type: {label}')
-    st.write(f"The sentiment I detect is {sentiment[0]['label']}.")
+    if dclassification[0]['label'] == 'LABEL_0':
+        st.write(f'I cannot detect any disaster -- anyways, let me give you some further information:')
+        st.write(f"The sentiment I detect is {sentiment[0]['label']}.")
+        x = []
+        if len(location) != 0:
+            for j in range(len(location)):
+                if location[j]['entity_group'] == 'LOC':
+                    x.append(location[j]['word'])
 
-    x = []
-    if len(location) != 0:
-        for j in range(len(location)):
-            if location[j]['entity_group'] == 'LOC':
-                x.append(location[j]['word'])
+        if len(x) == 0:
+            st.write('I have not detected any location.')
+                
+        elif len(x) == 1:
+            geolocator = Nominatim(user_agent="MyApp")
+            entity = geolocator.geocode(str(x))
+                
+            if entity is not None:
 
-    if len(x) == 0:
-        st.write('I have not detected any location')
-            
-    elif len(x) == 1:
-        geolocator = Nominatim(user_agent="MyApp")
-        entity = geolocator.geocode(str(x))
-            
-        if entity is not None:
+                long = entity.longitude
+                lat = entity.latitude
 
-            long = entity.longitude
-            lat = entity.latitude
+                locreverse = geolocator.reverse(str(entity.latitude) + " , " + str(entity.longitude), language = 'en')
+                address = locreverse.raw['address']
+                city = address.get('city', '')
+                state = address.get('state', '')
+                country = address.get('country', '')
+                
+                st.write(f"I have detected the following location: {x[0]}. The longitude is: {long} -- and the latitude is: {lat}. The country is {country}.")
+                
+                coor = [[lat, long]]
+                coor = pd.DataFrame(coor, columns=['lat', 'long'])	
 
-            locreverse = geolocator.reverse(str(entity.latitude) + " , " + str(entity.longitude), language = 'en')
-            address = locreverse.raw['address']
-            city = address.get('city', '')
-            state = address.get('state', '')
-            country = address.get('country', '')
-            
-            st.write(f"I have detected the following location: {x[0]}. The longitude is: {long} -- and the latitude is: {lat}. The country is {country}.")
+                fig = go.Figure()
+                fig.add_trace(go.Scattermapbox(
+                    mode = "markers",
+                    lat = coor.lat.tolist(),
+                    lon = coor.long.tolist(),
+                    #hovertext = df.name.tolist(),
+                    marker = {'color': "red", 
+                            "size": 10},
+                ))
+                fig.update_layout(margin ={'l':0,'t':0,'b':0,'r':0},
+                                mapbox = {
+                                    'center': {'lon': int(coor.long[0]), 'lat': int(coor.lat[0])},
+                                    'style': "stamen-terrain",
+                                    'zoom': 4.5},
+                                width=700,
+                                height=400,)
+                st.plotly_chart(fig, use_container_width=True)
 
-        else:
-            st.write("I detected a location, but I can't find out anything else about it.")
+            else:
+                st.write("I detected a location, but I can't find out anything else about it.")
 
-    elif len(x) > 1:
-        geolocator = Nominatim(user_agent="MyApp")
-        entity = geolocator.geocode(str(x[0]))
+        elif len(x) > 1:
+            geolocator = Nominatim(user_agent="MyApp")
+            entity = geolocator.geocode(str(x[0]))
 
-        if entity is not None:
+            if entity is not None:
 
-            long = entity.longitude
-            lat = entity.latitude
+                long = entity.longitude
+                lat = entity.latitude
 
-            locreverse = geolocator.reverse(str(entity.latitude) + " , " + str(entity.longitude), language = 'en')
-            address = locreverse.raw['address']
-            city = address.get('city', '')
-            state = address.get('state', '')
-            country = address.get('country', '')
-            st.write(f"I have detected several locations and will give you some info on the first one you typed in, which was: {x[0]}. The longitude is: {long} -- and the latitude is: {lat}. The country is {country}.")
-        else:
-            st.write("I have detected several locations. I was trying out to find some info one the first location you typed in, but couldn't find out anything.")
+                locreverse = geolocator.reverse(str(entity.latitude) + " , " + str(entity.longitude), language = 'en')
+                address = locreverse.raw['address']
+                city = address.get('city', '')
+                state = address.get('state', '')
+                country = address.get('country', '')
+                st.write(f"I have detected several locations and will give you some info on the first one you typed in, which was: {x[0]}. The longitude is: {long} -- and the latitude is: {lat}. The country is {country}.")
+                
+                coor = [[lat, long]]
+                coor = pd.DataFrame(coor, columns=['lat', 'long'])	
+
+                fig = go.Figure()
+                fig.add_trace(go.Scattermapbox(
+                    mode = "markers",
+                    lat = coor.lat.tolist(),
+                    lon = coor.long.tolist(),
+                    #hovertext = df.name.tolist(),
+                    marker = {'color': "red", 
+                            "size": 10},
+                ))
+                fig.update_layout(margin ={'l':0,'t':0,'b':0,'r':0},
+                                mapbox = {
+                                    'center': {'lon': int(coor.long[0]), 'lat': int(coor.lat[0])},
+                                    'style': "stamen-terrain",
+                                    'zoom': 4.5},
+                                width=700,
+                                height=400,)
+                st.plotly_chart(fig, use_container_width=True)
+
+            else:
+                st.write("I have detected several locations. I was trying out to find some info one the first location you typed in, but couldn't find out anything.")
+
+
+
+    else:
+        print('b')
+        st.write(f'I detect a disaster -- I think this refers to a disaster of type: {label}')
+        st.write(f"The sentiment I detect is {sentiment[0]['label']}.")
+
+        x = []
+        if len(location) != 0:
+            for j in range(len(location)):
+                if location[j]['entity_group'] == 'LOC':
+                    x.append(location[j]['word'])
+
+        if len(x) == 0:
+            st.write('I have not detected any location.')
+                
+        elif len(x) == 1:
+            geolocator = Nominatim(user_agent="MyApp")
+            entity = geolocator.geocode(str(x))
+                
+            if entity is not None:
+
+                long = entity.longitude
+                lat = entity.latitude
+
+                locreverse = geolocator.reverse(str(entity.latitude) + " , " + str(entity.longitude), language = 'en')
+                address = locreverse.raw['address']
+                city = address.get('city', '')
+                state = address.get('state', '')
+                country = address.get('country', '')
+                
+                st.write(f"I have detected the following location: {x[0]}. The longitude is: {long} -- and the latitude is: {lat}. The country is {country}.")
+
+                
+                coor = [[lat, long]]
+                coor = pd.DataFrame(coor, columns=['lat', 'long'])	
+
+                fig = go.Figure()
+                fig.add_trace(go.Scattermapbox(
+                    mode = "markers",
+                    lat = coor.lat.tolist(),
+                    lon = coor.long.tolist(),
+                    #hovertext = df.name.tolist(),
+                    marker = {'color': "red", 
+                            "size": 10},
+                ))
+                fig.update_layout(margin ={'l':0,'t':0,'b':0,'r':0},
+                                mapbox = {
+                                    'center': {'lon': int(coor.long[0]), 'lat': int(coor.lat[0])},
+                                    'style': "stamen-terrain",
+                                    'zoom': 4.5},
+                                width=700,
+                                height=400,)
+                st.plotly_chart(fig, use_container_width=True)
+
+            else:
+                st.write("I detected a location, but I can't find out anything else about it.")
+
+        elif len(x) > 1:
+            geolocator = Nominatim(user_agent="MyApp")
+            entity = geolocator.geocode(str(x[0]))
+
+            if entity is not None:
+
+                long = entity.longitude
+                lat = entity.latitude
+
+                locreverse = geolocator.reverse(str(entity.latitude) + " , " + str(entity.longitude), language = 'en')
+                address = locreverse.raw['address']
+                city = address.get('city', '')
+                state = address.get('state', '')
+                country = address.get('country', '')
+                st.write(f"I have detected several locations and will give you some info on the first one you typed in, which was: {x[0]}. The longitude is: {long} -- and the latitude is: {lat}. The country is {country}.")
+
+                coor = [[lat, long]]
+                coor = pd.DataFrame(coor, columns=['lat', 'long'])	
+
+                fig = go.Figure()
+                fig.add_trace(go.Scattermapbox(
+                    mode = "markers",
+                    lat = coor.lat.tolist(),
+                    lon = coor.long.tolist(),
+                    #hovertext = df.name.tolist(),
+                    marker = {'color': "red", 
+                            "size": 10},
+                ))
+                fig.update_layout(margin ={'l':0,'t':0,'b':0,'r':0},
+                                mapbox = {
+                                    'center': {'lon': int(coor.long[0]), 'lat': int(coor.lat[0])},
+                                    'style': "stamen-terrain",
+                                    'zoom': 4.5},
+                                width=700,
+                                height=400,)
+                st.plotly_chart(fig, use_container_width=True)
+
+            else:
+                st.write("I have detected several locations. I was trying out to find some info one the first location you typed in, but couldn't find out anything.")
 
 st.text("")
 st.text("")
 
 st.markdown("<h3 style='text-align: left;'>Data Visualisations and Table:</h3>", unsafe_allow_html=True)
-# top-level filters
-#job_filter = st.selectbox("Select the continent", pd.unique(df2["continent"]))
-continent_filter = st.multiselect(
-     'Select a continent',
-     ['Asia', 'Africa', 'North America', 'South America', 'Oceania', 'Europe'],
-     ['Asia', 'Africa', 'North America', 'South America', 'Oceania', 'Europe'])
+col1, col2 = st.columns([8,2])
+with col1:
+    # top-level filters
+    #job_filter = st.selectbox("Select the continent", pd.unique(df2["continent"],color: green))
+    continent_filter = st.multiselect(
+        'Select a continent',
+        ['Asia', 'Africa', 'North America', 'South America', 'Oceania', 'Europe'],
+        ['Asia', 'Africa', 'North America', 'South America', 'Oceania', 'Europe'])
 
-disaster_filter = st.multiselect(
-     'Select a disaster type',
-     ['Hurricane & Tornado', 'Transportation', 'Flood', 'Industrial', 'Earthquake', 'Societal', 'Wildfire', 'Biological', 'Meteor'],
-     ['Hurricane & Tornado', 'Transportation', 'Flood', 'Industrial', 'Earthquake', 'Societal', 'Wildfire', 'Biological', 'Meteor'])
+    disaster_filter = st.multiselect(
+        'Select a disaster type',
+        ['Hurricane & Tornado', 'Transportation', 'Flood', 'Industrial', 'Earthquake', 'Societal', 'Wildfire', 'Biological', 'Meteor'],
+        ['Hurricane & Tornado', 'Transportation', 'Flood', 'Industrial', 'Earthquake', 'Societal', 'Wildfire', 'Biological', 'Meteor'])
+    
+
 
 if len(continent_filter) == 1:
     if continent_filter == ['Asia']:
@@ -180,19 +345,14 @@ df2 = df2.pivot(index=['country', 'alpha3', 'year', 'continent'], columns='predi
 df2.reset_index(inplace=True)
 df2 = df2.rename_axis(None, axis=1)
 
-# creating KPIs
-count = df2['continent'].value_counts()[0]
 
-
-# create three columns
-kpi1, kpi2, kpi3 = st.columns(3)
-
-# fill in those three columns with respective metrics or KPIs
-kpi1.metric(
-    label="No. Tweets (based on your selection)",
-    value=len(df),
-    #delta=round(df2['continent'].value_counts()[0]) - 10,
-    )
+with col2:  
+    
+    st.text("")
+    
+    count = df2['continent'].value_counts()[0]
+    st.header(" No. Tweets")
+    st.metric(label= "(based on your selection)", value=len(df), delta=None, delta_color="normal")
 
 # create two columns for charts
 fig_col1, fig_col2 = st.columns(2)
