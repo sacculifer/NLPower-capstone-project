@@ -17,3 +17,9 @@ gensim==4.1.2
 Keras==2.8.0
 pydot==1.4.2
 wordcloud==1.8.2.2
+textatistic==0.0.1
+spacy
+tensorflow-macos==2.8.0
+tensorflow-metal==0.4.0
+tensorflow-hub==0.12.0
+protobuf==3.20.1
