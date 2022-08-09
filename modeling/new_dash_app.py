@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 
 
 
-df = pd.read_csv("/Users/lenastrokov/neuefische/NLPower-capstone-project/modeling/data/output.csv")
+df = pd.read_csv("/Users/lenastrokov/neuefische/NLPower-capstone-project/modeling/df_final.csv")
 
 st.set_page_config(
     page_title="DIMBAT - all we wont to write about it",
