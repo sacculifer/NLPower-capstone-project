@@ -422,29 +422,6 @@ with fig_tab2:
 st.text("")
 st.text("")
 st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-st.text("")
-
 
 
 col1, col2, col3= st.columns(3)
@@ -455,21 +432,3 @@ with col2:
     st.image("NLPower_logo.png")  
 # with col3:  
 #     st.image("NLpower.png", width=150)
-
-st.markdown("<h2 style='text-align: left; color: teal;'>Outlook</h2>", unsafe_allow_html=True)
-st.markdown("#### - Running (near) real-time on twitter stream")
-st.markdown("#### - More refined time component (filtering/visualisation)")
-st.markdown("#### - Include Twitter geoinformation")
-st.markdown("#### - More themes for classification")
-st.markdown("#### - More languages")
-st.markdown("#### - Adding image recognition/matching functionality")
-st.markdown("#### - Adding other social media services")
-
-
-st.markdown('''
-<style>
-[data-testid="stMarkdownContainer"] ul{
-    list-style-position: inside;
-}
-</style>
-''', unsafe_allow_html=True)
